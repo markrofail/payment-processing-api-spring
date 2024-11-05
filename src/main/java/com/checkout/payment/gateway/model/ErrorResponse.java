@@ -13,8 +13,6 @@ public class ErrorResponse {
 
   @Override
   public String toString() {
-    return "ErrorResponse{" +
-        "message='" + message + '\'' +
-        '}';
+    return String.format("ErrorResponse{message='%s'}", message);
   }
 }

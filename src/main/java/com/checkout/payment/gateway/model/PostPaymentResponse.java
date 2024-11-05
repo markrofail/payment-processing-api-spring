@@ -71,14 +71,6 @@ public class PostPaymentResponse {
 
   @Override
   public String toString() {
-    return "GetPaymentResponse{" +
-        "id=" + id +
-        ", status=" + status +
-        ", cardNumberLastFour=" + cardNumberLastFour +
-        ", expiryMonth=" + expiryMonth +
-        ", expiryYear=" + expiryYear +
-        ", currency='" + currency + '\'' +
-        ", amount=" + amount +
-        '}';
+    return String.format("GetPaymentResponse{id=%s, status=%s, cardNumberLastFour=%d, expiryMonth=%d, expiryYear=%d, currency='%s', amount=%d}", id, status, cardNumberLastFour, expiryMonth, expiryYear, currency, amount);
   }
 }
