@@ -13,6 +13,8 @@ public interface PaymentMapper {
 
   PaymentMapper INSTANCE = Mappers.getMapper(PaymentMapper.class);
 
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "status", ignore = true)
   Payment toPayment(PostPaymentRequestDTO paymentRequestDTO);
 
   PostPaymentResponseDTO toPostPaymentResponseDto(Payment payment);

@@ -7,6 +7,7 @@ import com.checkout.payment.gateway.exception.PaymentNotFoundException;
 import com.checkout.payment.gateway.model.Payment;
 import com.checkout.payment.gateway.repository.PaymentsRepository;
 import java.time.Year;
+import java.util.ArrayList;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,7 +26,8 @@ public class PaymentGatewayService {
 
   public Payment getPaymentById(UUID id) {
     LOG.debug("Requesting access to to payment with ID {}", id);
-    return paymentsRepository.getById(id).orElseThrow(() -> new PaymentNotFoundException("Payment not found"));
+    return paymentsRepository.getById(id)
+        .orElseThrow(() -> new PaymentNotFoundException("Payment not found"));
   }
 
   public void processPayment(Payment payment) {
@@ -42,27 +44,27 @@ public class PaymentGatewayService {
   }
 
   private void validatePayment(Payment payment) {
-    StringBuilder errors = new StringBuilder();
+    ArrayList<String> errors = new ArrayList<>();
 
     if (payment.getCardNumberLastFour() < 0 || payment.getCardNumberLastFour() > 9999) {
-      errors.append("Card number last four digits must be between 0000 and 9999. ");
+      errors.add("Card number last four digits must be between 0000 and 9999");
     }
     if (payment.getExpiryMonth() < 1 || payment.getExpiryMonth() > 12) {
-      errors.append("Expiry month must be between 1 and 12. ");
+      errors.add("Expiry month must be between 1 and 12");
     }
     int currentYear = Year.now().getValue();
     if (payment.getExpiryYear() < currentYear) {
-      errors.append("Expiry year must be current year or later. ");
+      errors.add("Expiry year must be current year or later");
     }
     if (payment.getAmount() <= 0) {
-      errors.append("Amount must be greater than zero. ");
+      errors.add("Amount must be greater than zero");
     }
     if (payment.getCurrency() == null || payment.getCurrency().isEmpty()) {
-      errors.append("Currency must be provided. ");
+      errors.add("Currency must be provided");
     }
 
     if (!errors.isEmpty()) {
-      throw new InvalidPaymentException("Invalid payment data: " + errors.toString());
+      throw new InvalidPaymentException("Invalid payment data", errors.toArray(new String[]{}));
     }
   }
 
