@@ -7,6 +7,7 @@ import com.checkout.payment.gateway.dto.mappers.PaymentMapper;
 import com.checkout.payment.gateway.model.Payment;
 import com.checkout.payment.gateway.service.PaymentGatewayService;
 import java.util.UUID;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -30,21 +31,14 @@ public class PaymentGatewayController {
   public ResponseEntity<GetPaymentResponseDTO> getPaymentById(@PathVariable UUID id) {
     Payment payment = paymentGatewayService.getPaymentById(id);
 
-    return new ResponseEntity<>(
-        paymentMapper.toGetPaymentResponseDto(payment),
-        HttpStatus.OK
-    );
+    return new ResponseEntity<>(paymentMapper.toGetPaymentResponseDto(payment), HttpStatus.OK);
   }
 
   @PostMapping
-  public ResponseEntity<PostPaymentResponseDTO> processPayment(
-      @RequestBody PostPaymentRequestDTO body) {
+  public ResponseEntity<PostPaymentResponseDTO> processPayment(@Valid @RequestBody PostPaymentRequestDTO body) {
     Payment payment = paymentMapper.toPayment(body);
     paymentGatewayService.processPayment(payment);
 
-    return new ResponseEntity<>(
-        paymentMapper.toPostPaymentResponseDto(payment),
-        HttpStatus.CREATED
-    );
+    return new ResponseEntity<>(paymentMapper.toPostPaymentResponseDto(payment), HttpStatus.CREATED);
   }
 }

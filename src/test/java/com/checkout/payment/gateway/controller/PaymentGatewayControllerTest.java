@@ -1,6 +1,7 @@
 package com.checkout.payment.gateway.controller;
 
 
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -101,8 +102,7 @@ class PaymentGatewayControllerTest {
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(payload)))
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.messages").value(
-            "Card number last four digits must be between 0000 and 9999"));
+        .andExpect(jsonPath("$.messages").value("Card number last four digits must be between 0000 and 9999"));
   }
 
   @Test
@@ -114,8 +114,7 @@ class PaymentGatewayControllerTest {
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(payload)))
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.messages").value(
-            "Expiry month must be between 1 and 12"));
+        .andExpect(jsonPath("$.messages").value("Expiry month must be between 1 and 12"));
   }
 
   @Test
@@ -127,8 +126,7 @@ class PaymentGatewayControllerTest {
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(payload)))
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.messages").value(
-            "Expiry year must be current year or later"));
+        .andExpect(jsonPath("$.messages").value("Expiry year must be current year or later"));
   }
 
 
@@ -141,8 +139,7 @@ class PaymentGatewayControllerTest {
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(payload)))
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.messages").value(
-            "Currency must be provided"));
+        .andExpect(jsonPath("$.messages").value("Currency must be provided"));
   }
 
   @Test
@@ -154,8 +151,7 @@ class PaymentGatewayControllerTest {
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(payload)))
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.messages").value(
-            "Amount must be greater than zero"));
+        .andExpect(jsonPath("$.messages").value("Amount must be greater than zero"));
   }
 
   @Test
@@ -168,9 +164,6 @@ class PaymentGatewayControllerTest {
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(payload)))
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.messages[0]").value(
-            "Amount must be greater than zero"))
-        .andExpect(jsonPath("$.messages[1]").value(
-            "Currency must be provided"));
+        .andExpect(jsonPath("$.messages", containsInAnyOrder("Currency must be provided", "Amount must be greater than zero")));
   }
 }
