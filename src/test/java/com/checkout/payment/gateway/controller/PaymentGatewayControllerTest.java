@@ -14,12 +14,14 @@ import com.checkout.payment.gateway.enums.PaymentStatus;
 import com.checkout.payment.gateway.model.CreditCard;
 import com.checkout.payment.gateway.model.Payment;
 import com.checkout.payment.gateway.repository.PaymentsRepository;
+import java.time.YearMonth;
 import java.util.UUID;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -37,7 +39,7 @@ class PaymentGatewayControllerTest {
   @Autowired
   PaymentsRepository paymentsRepository;
 
-  @Autowired
+  @MockBean
   private AcquiringBankClient bankClient;
 
   private final PaymentMapper paymentMapper = PaymentMapper.INSTANCE;
@@ -115,11 +117,12 @@ class PaymentGatewayControllerTest {
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(payload)))
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.messages", containsInAnyOrder("Card number must be 16 digits","Card number must be provided")));
+        .andExpect(jsonPath("$.messages", containsInAnyOrder("Card number must be provided", "Card number must be between 14 and 19 digits")));
   }
 
+
   @Test
-  void shouldReturnBadRequestForInvalidCardNumber() throws Exception {
+  void shouldReturnBadRequestForSmallCardNumber() throws Exception {
     PostPaymentRequestDTO payload = createPayload();
     payload.setCardNumber("1234"); // Invalid data
 
@@ -127,7 +130,19 @@ class PaymentGatewayControllerTest {
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(payload)))
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.messages").value("Card number must be 16 digits"));
+        .andExpect(jsonPath("$.messages").value("Card number must be between 14 and 19 digits"));
+  }
+
+  @Test
+  void shouldReturnBadRequestForLargeCardNumber() throws Exception {
+    PostPaymentRequestDTO payload = createPayload();
+    payload.setCardNumber("12341234123412341234"); // Invalid data
+
+    mvc.perform(MockMvcRequestBuilders.post(BASE_URL)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(payload)))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.messages").value("Card number must be between 14 and 19 digits"));
   }
 
   @Test
@@ -139,19 +154,31 @@ class PaymentGatewayControllerTest {
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(payload)))
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.messages", containsInAnyOrder("CVV must be 3 digits","CVV must be provided")));
+        .andExpect(jsonPath("$.messages", containsInAnyOrder("CVV must be provided", "CVV must be 3 or 4 digits")));
   }
 
   @Test
-  void shouldReturnBadRequestForInvalidCardCVV() throws Exception {
+  void shouldReturnBadRequestForLargeCardCVV() throws Exception {
     PostPaymentRequestDTO payload = createPayload();
-    payload.setCvv("1234"); // Invalid data
+    payload.setCvv("12345"); // Invalid data
 
     mvc.perform(MockMvcRequestBuilders.post(BASE_URL)
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(payload)))
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.messages").value("CVV must be 3 digits"));
+        .andExpect(jsonPath("$.messages").value("CVV must be 3 or 4 digits"));
+  }
+
+  @Test
+  void shouldReturnBadRequestForSmallCardCVV() throws Exception {
+    PostPaymentRequestDTO payload = createPayload();
+    payload.setCvv("1"); // Invalid data
+
+    mvc.perform(MockMvcRequestBuilders.post(BASE_URL)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(payload)))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.messages").value("CVV must be 3 or 4 digits"));
   }
 
   @Test
@@ -175,12 +202,26 @@ class PaymentGatewayControllerTest {
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(payload)))
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.messages").value("Expiry year must be current year or later"));
+        .andExpect(jsonPath("$.messages", containsInAnyOrder("Expiry date must be in the future","Expiry year must be current year or later")));
   }
 
 
   @Test
-  void shouldReturnBadRequestForInvalidCurrency() throws Exception {
+  void shouldReturnBadRequestForInvalidExpiryDate() throws Exception {
+    PostPaymentRequestDTO payload = createPayload();
+    YearMonth now = YearMonth.now();
+    payload.setExpiryYear(now.getYear());       // Invalid data
+    payload.setExpiryMonth((now.getMonthValue() - 1) % 12);       // Invalid data
+
+    mvc.perform(MockMvcRequestBuilders.post(BASE_URL)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(payload)))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.messages").value("Expiry date must be in the future"));
+  }
+
+  @Test
+  void shouldReturnBadRequestForEmptyCurrency() throws Exception {
     PostPaymentRequestDTO payload = createPayload();
     payload.setCurrency("");  // Invalid data
 
@@ -188,7 +229,19 @@ class PaymentGatewayControllerTest {
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(payload)))
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.messages").value("Currency must be provided"));
+        .andExpect(jsonPath("$.messages", containsInAnyOrder("Currency must be one of USD, EUR, or GBP", "Currency must be provided")));
+  }
+
+  @Test
+  void shouldReturnBadRequestForUnrecognizedCurrency() throws Exception {
+    PostPaymentRequestDTO payload = createPayload();
+    payload.setCurrency("EGP");  // Invalid data
+
+    mvc.perform(MockMvcRequestBuilders.post(BASE_URL)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(payload)))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.messages").value("Currency must be one of USD, EUR, or GBP"));
   }
 
   @Test
@@ -204,7 +257,7 @@ class PaymentGatewayControllerTest {
   }
 
   @Test
-  void shouldReturnBadRequestForMultipleInvalidField() throws Exception {
+  void shouldReturnBadRequestForMultipleInvalidFields() throws Exception {
     PostPaymentRequestDTO payload = createPayload();
     payload.setCurrency("");  // Invalid data
     payload.setAmount(-50);  // Invalid data
@@ -213,6 +266,10 @@ class PaymentGatewayControllerTest {
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(payload)))
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.messages", containsInAnyOrder("Currency must be provided", "Amount must be greater than zero")));
+        .andExpect(jsonPath("$.messages", containsInAnyOrder(
+            "Currency must be one of USD, EUR, or GBP",
+            "Currency must be provided",
+            "Amount must be greater than zero"
+        )));
   }
 }
