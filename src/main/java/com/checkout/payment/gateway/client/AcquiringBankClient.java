@@ -14,15 +14,18 @@ public class AcquiringBankClient {
 
   private final WebClient webClient;
 
-  public AcquiringBankClient(@Value("${acquiring.bank.base-url}") String acquiringBankBaseUrl) {
-    this.webClient = WebClient.builder()
+  public AcquiringBankClient(@Value("${acquiring.bank.base-url}") String acquiringBankBaseUrl, WebClient webClient) {
+    this.webClient = webClient.mutate()
         .baseUrl(acquiringBankBaseUrl)
         .build();
   }
 
+  public AcquiringBankClient(@Value("${acquiring.bank.base-url}") String acquiringBankBaseUrl) {
+    this(acquiringBankBaseUrl, WebClient.builder().baseUrl(acquiringBankBaseUrl).build());
+  }
+
   public PaymentStatus authorizePayment(Payment payment, CreditCard creditCard) {
     try {
-      // Create request DTO
       AcquiringBankRequestDTO requestDTO = new AcquiringBankRequestDTO();
       requestDTO.setCard_number(creditCard.cardNumber());
       requestDTO.setCvv(creditCard.cvv());
@@ -30,7 +33,6 @@ public class AcquiringBankClient {
       requestDTO.setCurrency(payment.getCurrency());
       requestDTO.setAmount(payment.getAmount());
 
-      // Make the API call
       AcquiringBankResponseDTO responseDTO = webClient.post()
           .uri("/payments")
           .bodyValue(requestDTO)
@@ -38,7 +40,6 @@ public class AcquiringBankClient {
           .bodyToMono(AcquiringBankResponseDTO.class)
           .block();
 
-      // Determine payment status based on response
       if (responseDTO != null && responseDTO.isAuthorized()) {
         return PaymentStatus.AUTHORIZED;
       } else {

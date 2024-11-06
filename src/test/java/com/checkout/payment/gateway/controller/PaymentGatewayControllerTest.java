@@ -202,16 +202,16 @@ class PaymentGatewayControllerTest {
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(payload)))
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.messages", containsInAnyOrder("Expiry date must be in the future","Expiry year must be current year or later")));
+        .andExpect(jsonPath("$.messages", containsInAnyOrder("Expiry date must be in the future", "Expiry year must be current year or later")));
   }
 
 
   @Test
   void shouldReturnBadRequestForInvalidExpiryDate() throws Exception {
     PostPaymentRequestDTO payload = createPayload();
-    YearMonth now = YearMonth.now();
-    payload.setExpiryYear(now.getYear());       // Invalid data
-    payload.setExpiryMonth((now.getMonthValue() - 1) % 12);       // Invalid data
+    YearMonth past = YearMonth.now().minusMonths(1);
+    payload.setExpiryYear(past.getYear());        // Invalid data
+    payload.setExpiryMonth(past.getMonthValue()); // Invalid data
 
     mvc.perform(MockMvcRequestBuilders.post(BASE_URL)
             .contentType(MediaType.APPLICATION_JSON)
