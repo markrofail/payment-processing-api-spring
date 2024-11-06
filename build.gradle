@@ -33,6 +33,8 @@ dependencies {
   // Validation
   implementation 'org.springframework.boot:spring-boot-starter-validation'
 
+  // Web Client
+  implementation 'org.springframework.boot:spring-boot-starter-webflux' // For WebClient
 
   // Testing dependencies
   testImplementation 'org.springframework.boot:spring-boot-starter-test'

@@ -3,7 +3,9 @@ package com.checkout.payment.gateway.controller;
 import com.checkout.payment.gateway.dto.GetPaymentResponseDTO;
 import com.checkout.payment.gateway.dto.PostPaymentRequestDTO;
 import com.checkout.payment.gateway.dto.PostPaymentResponseDTO;
+import com.checkout.payment.gateway.dto.mappers.CreditCardMapper;
 import com.checkout.payment.gateway.dto.mappers.PaymentMapper;
+import com.checkout.payment.gateway.model.CreditCard;
 import com.checkout.payment.gateway.model.Payment;
 import com.checkout.payment.gateway.service.PaymentGatewayService;
 import java.util.UUID;
@@ -26,6 +28,7 @@ public class PaymentGatewayController {
   private PaymentGatewayService paymentGatewayService;
 
   private final PaymentMapper paymentMapper = PaymentMapper.INSTANCE;
+  private final CreditCardMapper creditCardMapper = CreditCardMapper.INSTANCE;
 
   @GetMapping("/{id}")
   public ResponseEntity<GetPaymentResponseDTO> getPaymentById(@PathVariable UUID id) {
@@ -37,7 +40,8 @@ public class PaymentGatewayController {
   @PostMapping
   public ResponseEntity<PostPaymentResponseDTO> processPayment(@Valid @RequestBody PostPaymentRequestDTO body) {
     Payment payment = paymentMapper.toPayment(body);
-    paymentGatewayService.processPayment(payment);
+    CreditCard creditCard = creditCardMapper.toCreditCard(body);
+    paymentGatewayService.processPayment(payment, creditCard);
 
     return new ResponseEntity<>(paymentMapper.toPostPaymentResponseDto(payment), HttpStatus.CREATED);
   }

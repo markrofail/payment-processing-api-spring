@@ -1,7 +1,9 @@
 package com.checkout.payment.gateway.service;
 
+import com.checkout.payment.gateway.client.AcquiringBankClient;
 import com.checkout.payment.gateway.enums.PaymentStatus;
 import com.checkout.payment.gateway.exception.PaymentNotFoundException;
+import com.checkout.payment.gateway.model.CreditCard;
 import com.checkout.payment.gateway.model.Payment;
 import com.checkout.payment.gateway.repository.PaymentsRepository;
 import java.util.UUID;
@@ -16,8 +18,11 @@ public class PaymentGatewayService {
 
   private final PaymentsRepository paymentsRepository;
 
-  public PaymentGatewayService(PaymentsRepository paymentsRepository) {
+  private final AcquiringBankClient acquiringBankClient;
+
+  public PaymentGatewayService(PaymentsRepository paymentsRepository, AcquiringBankClient acquiringBankClient) {
     this.paymentsRepository = paymentsRepository;
+    this.acquiringBankClient = acquiringBankClient;
   }
 
   public Payment getPaymentById(UUID id) {
@@ -26,23 +31,12 @@ public class PaymentGatewayService {
         .orElseThrow(() -> new PaymentNotFoundException("Payment not found"));
   }
 
-  public void processPayment(Payment payment) {
-    // Simulate call to acquiring bank
-    PaymentStatus status = callAcquiringBank(payment);
+  public void processPayment(Payment payment, CreditCard creditCard) {
+    PaymentStatus status = acquiringBankClient.authorizePayment(payment, creditCard);
 
     payment.setId(UUID.randomUUID());
     payment.setStatus(status);
 
     paymentsRepository.add(payment);
-  }
-
-  private PaymentStatus callAcquiringBank(Payment payment) {
-    // Simulate bank authorization
-    // For demonstration, payments with amount divisible by 5 are authorized
-    if (payment.getAmount() % 5 == 0) {
-      return PaymentStatus.AUTHORIZED;
-    } else {
-      return PaymentStatus.DECLINED;
-    }
   }
 }

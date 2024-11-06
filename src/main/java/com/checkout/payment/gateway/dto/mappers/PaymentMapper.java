@@ -15,6 +15,7 @@ public interface PaymentMapper {
 
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "status", ignore = true)
+  @Mapping(target = "cardNumberLastFour", expression = "java(Integer.parseInt(paymentRequestDTO.getCardNumber().substring(paymentRequestDTO.getCardNumber().length() - 4)))")
   Payment toPayment(PostPaymentRequestDTO paymentRequestDTO);
 
   PostPaymentResponseDTO toPostPaymentResponseDto(Payment payment);

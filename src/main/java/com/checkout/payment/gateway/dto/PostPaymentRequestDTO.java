@@ -5,9 +5,13 @@ import lombok.Data;
 
 @Data
 public class PostPaymentRequestDTO {
-  @Min(value = 0, message = "Card number last four digits must be between 0000 and 9999")
-  @Max(value = 9999, message = "Card number last four digits must be between 0000 and 9999")
-  private int cardNumberLastFour;
+  @NotBlank(message = "Card number must be provided")
+  @Pattern(regexp = "\\d{16}", message = "Card number must be 16 digits")
+  private String cardNumber;
+
+  @NotBlank(message = "CVV must be provided")
+  @Pattern(regexp = "\\d{3}", message = "CVV must be 3 digits")
+  private String cvv;
 
   @Min(value = 1, message = "Expiry month must be between 1 and 12")
   @Max(value = 12, message = "Expiry month must be between 1 and 12")

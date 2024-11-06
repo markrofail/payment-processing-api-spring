@@ -2,12 +2,16 @@ package com.checkout.payment.gateway.controller;
 
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.checkout.payment.gateway.client.AcquiringBankClient;
 import com.checkout.payment.gateway.dto.PostPaymentRequestDTO;
 import com.checkout.payment.gateway.dto.mappers.PaymentMapper;
 import com.checkout.payment.gateway.enums.PaymentStatus;
+import com.checkout.payment.gateway.model.CreditCard;
 import com.checkout.payment.gateway.model.Payment;
 import com.checkout.payment.gateway.repository.PaymentsRepository;
 import java.util.UUID;
@@ -32,6 +36,9 @@ class PaymentGatewayControllerTest {
 
   @Autowired
   PaymentsRepository paymentsRepository;
+
+  @Autowired
+  private AcquiringBankClient bankClient;
 
   private final PaymentMapper paymentMapper = PaymentMapper.INSTANCE;
 
@@ -72,7 +79,8 @@ class PaymentGatewayControllerTest {
 
   PostPaymentRequestDTO createPayload() {
     PostPaymentRequestDTO payload = new PostPaymentRequestDTO();
-    payload.setCardNumberLastFour(1234);
+    payload.setCardNumber("2222405343248877");
+    payload.setCvv("123");
     payload.setExpiryMonth(12);
     payload.setExpiryYear(2025);
     payload.setCurrency("USD");
@@ -85,6 +93,11 @@ class PaymentGatewayControllerTest {
   void shouldReturnCreatedForValidPaymentRequest() throws Exception {
     PostPaymentRequestDTO payload = createPayload();
 
+    Payment payment = paymentMapper.toPayment(payload);
+    payment.setId(UUID.randomUUID());
+    payment.setStatus(PaymentStatus.AUTHORIZED);
+    when(bankClient.authorizePayment(any(Payment.class), any(CreditCard.class))).thenReturn(PaymentStatus.AUTHORIZED);
+
     mvc.perform(MockMvcRequestBuilders.post(BASE_URL)
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(payload)))
@@ -94,15 +107,51 @@ class PaymentGatewayControllerTest {
   }
 
   @Test
-  void shouldReturnBadRequestForInvalidCardNumber() throws Exception {
+  void shouldReturnBadRequestForEmptyCardNumber() throws Exception {
     PostPaymentRequestDTO payload = createPayload();
-    payload.setCardNumberLastFour(-1); // Invalid data
+    payload.setCardNumber(""); // Invalid data
 
     mvc.perform(MockMvcRequestBuilders.post(BASE_URL)
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(payload)))
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.messages").value("Card number last four digits must be between 0000 and 9999"));
+        .andExpect(jsonPath("$.messages", containsInAnyOrder("Card number must be 16 digits","Card number must be provided")));
+  }
+
+  @Test
+  void shouldReturnBadRequestForInvalidCardNumber() throws Exception {
+    PostPaymentRequestDTO payload = createPayload();
+    payload.setCardNumber("1234"); // Invalid data
+
+    mvc.perform(MockMvcRequestBuilders.post(BASE_URL)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(payload)))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.messages").value("Card number must be 16 digits"));
+  }
+
+  @Test
+  void shouldReturnBadRequestForEmptyCardCVV() throws Exception {
+    PostPaymentRequestDTO payload = createPayload();
+    payload.setCvv(""); // Invalid data
+
+    mvc.perform(MockMvcRequestBuilders.post(BASE_URL)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(payload)))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.messages", containsInAnyOrder("CVV must be 3 digits","CVV must be provided")));
+  }
+
+  @Test
+  void shouldReturnBadRequestForInvalidCardCVV() throws Exception {
+    PostPaymentRequestDTO payload = createPayload();
+    payload.setCvv("1234"); // Invalid data
+
+    mvc.perform(MockMvcRequestBuilders.post(BASE_URL)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(payload)))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.messages").value("CVV must be 3 digits"));
   }
 
   @Test
