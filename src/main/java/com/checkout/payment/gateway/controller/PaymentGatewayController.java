@@ -1,25 +1,50 @@
 package com.checkout.payment.gateway.controller;
 
-import com.checkout.payment.gateway.model.PostPaymentResponse;
+import com.checkout.payment.gateway.dto.GetPaymentResponseDTO;
+import com.checkout.payment.gateway.dto.PostPaymentRequestDTO;
+import com.checkout.payment.gateway.dto.PostPaymentResponseDTO;
+import com.checkout.payment.gateway.dto.mappers.PaymentMapper;
+import com.checkout.payment.gateway.model.Payment;
 import com.checkout.payment.gateway.service.PaymentGatewayService;
 import java.util.UUID;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-@RestController("api")
+@RestController
+@RequestMapping("/api/v1/payments")
 public class PaymentGatewayController {
 
-  private final PaymentGatewayService paymentGatewayService;
+  @Autowired
+  private PaymentGatewayService paymentGatewayService;
 
-  public PaymentGatewayController(PaymentGatewayService paymentGatewayService) {
-    this.paymentGatewayService = paymentGatewayService;
+  private final PaymentMapper paymentMapper = PaymentMapper.INSTANCE;
+
+  @GetMapping("/{id}")
+  public ResponseEntity<GetPaymentResponseDTO> getPaymentById(@PathVariable UUID id) {
+    Payment payment = paymentGatewayService.getPaymentById(id);
+
+    return new ResponseEntity<>(
+        paymentMapper.toGetPaymentResponseDto(payment),
+        HttpStatus.OK
+    );
   }
 
-  @GetMapping("/payment/{id}")
-  public ResponseEntity<PostPaymentResponse> getPostPaymentEventById(@PathVariable UUID id) {
-    return new ResponseEntity<>(paymentGatewayService.getPaymentById(id), HttpStatus.OK);
+  @PostMapping
+  public ResponseEntity<PostPaymentResponseDTO> processPayment(
+      @RequestBody PostPaymentRequestDTO body) {
+    Payment payment = paymentMapper.toPayment(body);
+    paymentGatewayService.processPayment(payment);
+
+    return new ResponseEntity<>(
+        paymentMapper.toPostPaymentResponseDto(payment),
+        HttpStatus.CREATED
+    );
   }
 }

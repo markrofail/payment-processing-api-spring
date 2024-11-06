@@ -1,18 +1,7 @@
 package com.checkout.payment.gateway.model;
 
-public class ErrorResponse {
-  private final String message;
+import org.springframework.http.HttpStatus;
 
-  public ErrorResponse(String message) {
-    this.message = message;
-  }
+public record ErrorResponse(HttpStatus httpStatus, String message,  String description) {
 
-  public String getMessage() {
-    return message;
-  }
-
-  @Override
-  public String toString() {
-    return String.format("ErrorResponse{message='%s'}", message);
-  }
 }
