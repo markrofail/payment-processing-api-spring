@@ -5,6 +5,7 @@ import com.checkout.payment.gateway.dto.AcquiringBankResponseDTO;
 import com.checkout.payment.gateway.enums.PaymentStatus;
 import com.checkout.payment.gateway.model.CreditCard;
 import com.checkout.payment.gateway.model.Payment;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -14,14 +15,10 @@ public class AcquiringBankClient {
 
   private final WebClient webClient;
 
-  public AcquiringBankClient(@Value("${acquiring.bank.base-url}") String acquiringBankBaseUrl, WebClient webClient) {
+  public AcquiringBankClient(@Value("${acquiring.bank.base-url}") String acquiringBankBaseUrl, @Qualifier("acquiringBankWebClient") WebClient webClient) {
     this.webClient = webClient.mutate()
         .baseUrl(acquiringBankBaseUrl)
         .build();
-  }
-
-  public AcquiringBankClient(@Value("${acquiring.bank.base-url}") String acquiringBankBaseUrl) {
-    this(acquiringBankBaseUrl, WebClient.builder().baseUrl(acquiringBankBaseUrl).build());
   }
 
   public PaymentStatus authorizePayment(Payment payment, CreditCard creditCard) {
