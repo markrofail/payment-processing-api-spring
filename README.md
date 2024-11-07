@@ -90,6 +90,86 @@ This project is a **Payment Processing API** built with **Spring Boot**. It hand
 - **Service Tests**: Tests business logic and interaction with the in-memory database.
 - **Client Tests**: Mocks external API calls to test the AcquiringBankClient.
 
+**Example Queries**
+
+1. Process Authorised Payment
+
+   ```bash
+   curl -X POST http://localhost:8090/api/v1/payments \
+       -H "Content-Type: application/json" \
+       -d '{
+             "cardNumber": "2222405343248877",
+             "expiryMonth": 4,
+             "expiryYear": 2025,
+             "currency": "GBP",
+             "amount": "100",
+             "cvv": "123"
+           }'
+   ```
+
+   - response
+
+   ```json
+   {
+     "id": "959dcb52-804d-4065-a255-93d1b9a66a90",
+     "status": "Authorized",
+     "cardNumberLastFour": 8877,
+     "expiryMonth": 4,
+     "expiryYear": 2025,
+     "currency": "GBP",
+     "amount": 100
+   }
+   ```
+
+1. Process Declined Payment
+
+   ```
+   curl -X POST http://localhost:8090/api/v1/payments \
+       -H "Content-Type: application/json" \
+       -d '{
+             "cardNumber": "2222405343248112",
+             "expiryMonth": 1,
+             "expiryYear": 2026,
+             "currency": "USD",
+             "amount": "60000",
+             "cvv": "456"
+           }'
+   ```
+
+   - response
+
+   ```json
+   {
+     "id": "e56b54f0-7c30-433e-95d8-ac484b58ab96",
+     "status": "Declined",
+     "cardNumberLastFour": 8112,
+     "expiryMonth": 1,
+     "expiryYear": 2026,
+     "currency": "USD",
+     "amount": 60000
+   }
+   ```
+
+1. Fetch payment details
+
+   ```sh
+   curl -X GET http://localhost:8090/api/v1/payments/e56b54f0-7c30-433e-95d8-ac484b58ab96
+   ```
+
+   - response
+
+   ```json
+   {
+     "id": "e56b54f0-7c30-433e-95d8-ac484b58ab96",
+     "status": "Declined",
+     "cardNumberLastFour": 8112,
+     "expiryMonth": 1,
+     "expiryYear": 2026,
+     "currency": "USD",
+     "amount": 60000
+   }
+   ```
+
 ## 👾 Features
 
 - **Input Validation**: Uses Java Bean Validation (JSR-380) to enforce validation rules on incoming payment requests.
